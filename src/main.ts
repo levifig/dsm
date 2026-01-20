@@ -28,6 +28,9 @@ import { createToastManager, type ToastManager } from './components/toast';
 import { createElement, getIconUrl } from './lib/utils';
 
 type FilterKey = 'all' | 'owned' | 'partner' | 'verified' | 'boosted' | 'discoverable';
+type SectionKey = 'favorites' | 'owned' | 'public' | 'private';
+
+const COLLAPSED_SECTIONS_KEY = 'discord_manager_collapsed_sections';
 
 const filterTooltipCopy: Partial<Record<FilterKey, string>> = {
   owned: 'Servers you administer',
@@ -49,6 +52,8 @@ interface SectionElements {
   section: HTMLElement;
   list: HTMLElement;
   count: HTMLElement;
+  content: HTMLElement;
+  header: HTMLButtonElement;
 }
 
 interface DemoGuildEntry {
@@ -60,12 +65,33 @@ interface DemoGuildEntry {
   features: string[];
 }
 
-const getElement = <T extends HTMLElement>(id: string): T => {
-  const element = document.getElementById(id);
+const getElement = <T extends HTMLElement>(selector: string): T => {
+  const element = selector.startsWith('[') || selector.startsWith('.')
+    ? document.querySelector<T>(selector)
+    : document.getElementById(selector);
   if (!element) {
-    throw new Error(`Missing element: ${id}`);
+    throw new Error(`Missing element: ${selector}`);
   }
   return element as T;
+};
+
+const setFooterYear = (): void => {
+  const footerYear = document.getElementById('footer-year');
+  if (footerYear) {
+    footerYear.textContent = `${new Date().getFullYear()}`;
+  }
+};
+
+const setFooterBuildInfo = (): void => {
+  const footerBuild = document.getElementById('footer-build');
+  if (!footerBuild) {
+    return;
+  }
+  const version = import.meta.env.VITE_APP_VERSION;
+  const timestamp = import.meta.env.VITE_BUILD_TIMESTAMP;
+  if (version && timestamp) {
+    footerBuild.textContent = `[Build ${version}-${timestamp}]`;
+  }
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -73,6 +99,26 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const hasBoost = (features: string[]): boolean =>
   features.includes('ANIMATED_ICON') || features.includes('ANIMATED_BANNER');
+
+const loadCollapsedSections = (): Set<SectionKey> => {
+  try {
+    const stored = localStorage.getItem(COLLAPSED_SECTIONS_KEY);
+    if (!stored) return new Set();
+    const parsed: unknown = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((item): item is SectionKey =>
+      typeof item === 'string' && ['favorites', 'owned', 'public', 'private'].includes(item)
+    ));
+  } catch {
+    return new Set();
+  }
+};
+
+const saveCollapsedSections = (collapsed: Set<SectionKey>): void => {
+  localStorage.setItem(COLLAPSED_SECTIONS_KEY, JSON.stringify([...collapsed]));
+};
+
+const collapsedSections = loadCollapsedSections();
 
 const isDemoMode = new URLSearchParams(window.location.search).get('demo') === '1';
 const DEMO_GUILDS_KEY = 'discord_manager_demo_guilds';
@@ -90,7 +136,7 @@ const state: AppState = {
 const loginScreen = getElement<HTMLElement>('login-screen');
 const loginActions = getElement<HTMLElement>('login-actions');
 const demoLoader = getElement<HTMLElement>('demo-loader');
-const demoFileInput = getElement<HTMLInputElement>('demo-file-input');
+const demoImportButton = getElement<HTMLButtonElement>('demo-import-button');
 const demoStatus = getElement<HTMLElement>('demo-status');
 const appShell = getElement<HTMLElement>('app-shell');
 const searchInput = getElement<HTMLInputElement>('search-input');
@@ -106,30 +152,86 @@ const sections: Record<string, SectionElements> = {
     section: getElement<HTMLElement>('favorites-section'),
     list: getElement<HTMLElement>('favorites-list'),
     count: getElement<HTMLElement>('favorites-count'),
+    content: getElement<HTMLElement>('favorites-content'),
+    header: getElement<HTMLButtonElement>('[data-collapse-toggle="favorites"]'),
   },
   owned: {
     section: getElement<HTMLElement>('owned-section'),
     list: getElement<HTMLElement>('owned-list'),
     count: getElement<HTMLElement>('owned-count'),
+    content: getElement<HTMLElement>('owned-content'),
+    header: getElement<HTMLButtonElement>('[data-collapse-toggle="owned"]'),
   },
   public: {
     section: getElement<HTMLElement>('public-section'),
     list: getElement<HTMLElement>('public-list'),
     count: getElement<HTMLElement>('public-count'),
+    content: getElement<HTMLElement>('public-content'),
+    header: getElement<HTMLButtonElement>('[data-collapse-toggle="public"]'),
   },
   private: {
     section: getElement<HTMLElement>('private-section'),
     list: getElement<HTMLElement>('private-list'),
     count: getElement<HTMLElement>('private-count'),
+    content: getElement<HTMLElement>('private-content'),
+    header: getElement<HTMLButtonElement>('[data-collapse-toggle="private"]'),
   },
+};
+
+const setSectionCollapsed = (sectionKey: SectionKey, collapsed: boolean): void => {
+  const section = sections[sectionKey];
+  if (!section) return;
+  
+  section.header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  section.content.classList.toggle('is-collapsed', collapsed);
+  
+  if (collapsed) {
+    collapsedSections.add(sectionKey);
+  } else {
+    collapsedSections.delete(sectionKey);
+  }
+  saveCollapsedSections(collapsedSections);
+};
+
+const toggleSectionCollapse = (sectionKey: SectionKey): void => {
+  const section = sections[sectionKey];
+  if (!section) return;
+  
+  const isExpanded = section.header.getAttribute('aria-expanded') === 'true';
+  setSectionCollapsed(sectionKey, isExpanded);
+};
+
+const initializeSectionStates = (): void => {
+  (['favorites', 'owned', 'public', 'private'] as const).forEach((key) => {
+    const section = sections[key];
+    if (!section) return;
+    
+    const isCollapsed = collapsedSections.has(key);
+    section.header.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+    section.content.classList.toggle('is-collapsed', isCollapsed);
+  });
 };
 
 const toastRegion = getElement<HTMLElement>('toast-region');
 const toast = createToastManager(toastRegion);
+const importModal = createModalController(getElement('import-modal'));
 const fetchModal = createModalController(getElement('fetch-modal'));
-const instructionsModal = createModalController(getElement('instructions-modal'));
 const detailsModal = createModalController(getElement('details-modal'));
+const instructionsModal = createModalController(getElement('instructions-modal'));
 const detailsBody = getElement<HTMLElement>('details-body');
+
+const importButton = getElement<HTMLButtonElement>('btn-import');
+const importTooltip = getElement<HTMLElement>('import-tooltip');
+const importModalTitle = getElement<HTMLElement>('import-title');
+const importModalCopy = getElement<HTMLElement>('import-copy');
+const importUserCopy = getElement<HTMLElement>('import-user-copy');
+const importUserMeta = getElement<HTMLElement>('import-user-meta');
+const importGuildsCopy = getElement<HTMLElement>('import-guilds-copy');
+const importGuildsMeta = getElement<HTMLElement>('import-guilds-meta');
+const importUserInput = getElement<HTMLInputElement>('import-user-input');
+const importGuildsInput = getElement<HTMLInputElement>('import-guilds-input');
+const importStatus = getElement<HTMLElement>('import-status');
+const instructionsLink = getElement<HTMLAnchorElement>('instructions-link');
 
 const getFetchStep = (step: string): HTMLElement => {
   const element = getElement<HTMLElement>('fetch-modal').querySelector<HTMLElement>(
@@ -157,6 +259,7 @@ const fetchProgressBar = getElement<HTMLElement>('fetch-progress-bar');
 const fetchCompleteText = getElement<HTMLElement>('fetch-complete-text');
 
 let fetchShouldStop = false;
+let demoUserDataLoaded = false;
 
 const showToast: ToastManager['show'] = (message, options) => {
   if (appShell.getAttribute('aria-hidden') === 'true') {
@@ -167,9 +270,10 @@ const showToast: ToastManager['show'] = (message, options) => {
 
 const closeAppOverlays = (): void => {
   fetchShouldStop = true;
+  importModal.close();
   fetchModal.close();
-  instructionsModal.close();
   detailsModal.close();
+  instructionsModal.close();
   toastRegion.replaceChildren();
 };
 
@@ -568,16 +672,25 @@ const performWidgetFetch = async (): Promise<void> => {
   render();
 };
 
-const handleImport = async (file: File): Promise<void> => {
+const handleImport = async (file: File): Promise<boolean> => {
   try {
     const content = await file.text();
     const parsed: unknown = JSON.parse(content);
     state.userData = importUserData(parsed, storageOptions);
+    if (isDemoMode && loginScreen.getAttribute('aria-hidden') === 'false') {
+      demoUserDataLoaded = true;
+      const message = 'User data loaded. Load guilds_api.json to continue.';
+      setImportStatus(message, 'neutral');
+      setDemoStatus(message, 'neutral');
+    }
     showToast('User data imported');
     render();
+    return true;
   } catch (error) {
     console.error(error);
     showToast('Import failed', { variant: 'error' });
+    setImportStatus('Import failed. Expect user_data.json.', 'error');
+    return false;
   }
 };
 
@@ -624,6 +737,40 @@ const normalizeDemoGuilds = (guilds: DemoGuildEntry[]): ApiGuild[] =>
 const setDemoStatus = (message: string, variant: 'neutral' | 'error' = 'neutral'): void => {
   demoStatus.textContent = message;
   demoStatus.classList.toggle('is-error', variant === 'error');
+};
+
+const setImportStatus = (message: string, variant: 'neutral' | 'error' = 'neutral'): void => {
+  importStatus.textContent = message;
+  importStatus.classList.toggle('is-error', variant === 'error');
+};
+
+const updateImportModalCopy = (source: 'login' | 'app'): void => {
+  setImportStatus('', 'neutral');
+  const isDemoImport = isDemoMode;
+  importModalTitle.textContent = isDemoImport ? 'Load demo data' : 'Import data';
+  importModalCopy.textContent = isDemoImport
+    ? 'Load guilds_api.json to enter demo mode. user_data.json is optional.'
+    : 'Choose what you want to import.';
+  if (isDemoImport) {
+    importUserCopy.textContent =
+      'Restore favorites, notes, nicknames, and widgets from a backup.';
+    importUserMeta.textContent = 'Optional in demo mode.';
+    importGuildsCopy.textContent =
+      'Export from the Discord API /users/@me/guilds endpoint or use the legacy export.';
+    importGuildsMeta.textContent = 'Required to enter demo mode.';
+  } else {
+    importUserCopy.textContent =
+      'Restore favorites, notes, nicknames, and widgets from a backup.';
+    importUserMeta.textContent = 'Primary import.';
+    importGuildsCopy.textContent =
+      'Export from the Discord API /users/@me/guilds endpoint or use the legacy export.';
+    importGuildsMeta.textContent = 'Optional if you have it.';
+  }
+};
+
+const openImportModal = (source: 'login' | 'app', trigger?: HTMLElement | null): void => {
+  updateImportModalCopy(source);
+  importModal.open(trigger);
 };
 
 const saveDemoGuilds = (guilds: ApiGuild[]): void => {
@@ -720,8 +867,9 @@ const applyDemoData = (guilds: ApiGuild[], options?: { resetUserData?: boolean }
   render();
 };
 
-const handleDemoFile = async (file: File): Promise<void> => {
+const handleDemoFile = async (file: File): Promise<boolean> => {
   setDemoStatus('Loading...', 'neutral');
+  setImportStatus('Loading...', 'neutral');
   try {
     const content = await file.text();
     const parsed: unknown = JSON.parse(content);
@@ -731,11 +879,16 @@ const handleDemoFile = async (file: File): Promise<void> => {
     }
     const guilds = normalizeDemoGuilds(demoGuilds);
     saveDemoGuilds(guilds);
-    applyDemoData(guilds, { resetUserData: true });
+    const shouldResetUserData = !demoUserDataLoaded;
+    applyDemoData(guilds, { resetUserData: shouldResetUserData });
     setDemoStatus('Loaded.', 'neutral');
+    setImportStatus('Loaded.', 'neutral');
+    return true;
   } catch (error) {
     console.error(error);
     setDemoStatus('Invalid file. Expect guilds_api.json.', 'error');
+    setImportStatus('Invalid file. Expect guilds_api.json.', 'error');
+    return false;
   }
 };
 
@@ -743,6 +896,7 @@ const setupDemoMode = (): void => {
   if (!isDemoMode) return;
   loginActions.classList.add('hidden');
   demoLoader.classList.remove('hidden');
+  importTooltip.textContent = 'Import user_data.json';
 };
 
 const hydrateDemo = (): void => {
@@ -757,6 +911,17 @@ const hydrateDemo = (): void => {
 
 const setupEvents = (): void => {
   attachFilterTooltips();
+  initializeSectionStates();
+  
+  document.querySelectorAll<HTMLButtonElement>('[data-collapse-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const sectionKey = button.dataset.collapseToggle as SectionKey | undefined;
+      if (sectionKey) {
+        toggleSectionCollapse(sectionKey);
+      }
+    });
+  });
+  
   document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((button) => {
     button.addEventListener('click', () => {
       const filter = button.dataset.filter as FilterKey | undefined;
@@ -794,10 +959,6 @@ const setupEvents = (): void => {
     fetchTooltip.setAttribute('aria-hidden', 'false');
   }
 
-  getElement<HTMLButtonElement>('btn-instructions').addEventListener('click', () => {
-    instructionsModal.open();
-  });
-
   getElement<HTMLButtonElement>('btn-logout').addEventListener('click', async () => {
     if (isDemoMode) {
       setScreen('login');
@@ -813,24 +974,51 @@ const setupEvents = (): void => {
     }
   });
 
-  const importInput = getElement<HTMLInputElement>('import-input');
-  importInput.addEventListener('change', () => {
-    const file = importInput.files?.[0];
-    if (file) {
-      handleImport(file);
-    }
-    importInput.value = '';
+  importButton.addEventListener('click', (event) => {
+    openImportModal('app', event.currentTarget as HTMLElement);
   });
 
-  if (isDemoMode) {
-    demoFileInput.addEventListener('change', () => {
-      const file = demoFileInput.files?.[0];
-      if (file) {
-        void handleDemoFile(file);
+  instructionsLink.addEventListener('click', (event) => {
+    event.preventDefault();
+    instructionsModal.open(event.currentTarget as HTMLElement);
+  });
+
+  demoImportButton.addEventListener('click', (event) => {
+    openImportModal('login', event.currentTarget as HTMLElement);
+  });
+
+  importUserInput.addEventListener('change', () => {
+    const file = importUserInput.files?.[0];
+    if (!file) {
+      return;
+    }
+    const handleImportFlow = async (): Promise<void> => {
+      const success = await handleImport(file);
+      if (success) {
+        if (!(isDemoMode && loginScreen.getAttribute('aria-hidden') === 'false')) {
+          importModal.close();
+        }
       }
-      demoFileInput.value = '';
-    });
-  }
+    };
+    void handleImportFlow();
+    importUserInput.value = '';
+  });
+
+  importGuildsInput.addEventListener('change', () => {
+    const file = importGuildsInput.files?.[0];
+    if (!file) {
+      return;
+    }
+    const handleImportFlow = async (): Promise<void> => {
+      const success = await handleDemoFile(file);
+      if (success) {
+        demoUserDataLoaded = false;
+        importModal.close();
+      }
+    };
+    void handleImportFlow();
+    importGuildsInput.value = '';
+  });
 
   fetchStart.addEventListener('click', () => {
     void performWidgetFetch();
@@ -870,6 +1058,8 @@ const hydrateApp = async (): Promise<void> => {
 };
 
 
+setFooterYear();
+setFooterBuildInfo();
 setupEvents();
 setupDemoMode();
 if (isDemoMode) {

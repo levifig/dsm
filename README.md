@@ -1,6 +1,6 @@
 # Metacord - Your Personal Discord Server Directory
 
-Metacord - Your Personal Discord Server Directory is a Discord server directory with OAuth authentication.
+Metacord is a personal Discord server directory, allowing to keep track of current (and previous) servers, adding notes, keeping track of invite links (so you can leave and rejoin later), etc...
 
 ## Features
 
@@ -30,6 +30,7 @@ Metacord - Your Personal Discord Server Directory is a Discord server directory 
 ### Setup
 
 1. Clone and install:
+
    ```bash
    pnpm install
    ```
@@ -41,13 +42,16 @@ Metacord - Your Personal Discord Server Directory is a Discord server directory 
    - Copy Client ID and Client Secret
 
 3. Create KV namespace:
+
    ```bash
    pnpm wrangler kv:namespace create "SESSIONS"
    pnpm wrangler kv:namespace create "SESSIONS" --preview
    ```
+
    Add the IDs to `wrangler.toml`
 
 4. Configure secrets (requires [direnv](https://direnv.net/)):
+
    ```bash
    cp .envrc.example .envrc
    # Edit .envrc with your Discord credentials and SESSION_SECRET
@@ -55,11 +59,12 @@ Metacord - Your Personal Discord Server Directory is a Discord server directory 
    ```
 
 5. Start development:
+
    ```bash
    pnpm dev
    ```
 
-> **Tip**: Use `?demo=1` to preview the UI without setting up OAuth. Demo mode loads mock data from `tmp/guilds_api.json`.
+> **Tip**: Use `?demo=1` to preview the UI without setting up OAuth. Demo mode loads mock data from a `guilds_api.json` that you can extract from the Console of your browser in a logged in session.
 
 ### Scripts
 
@@ -76,7 +81,7 @@ See `docs/deployment.md`.
 ## Project Structure
 
 ```
-discord-manager/
+metacord/
 ├── src/
 │   ├── index.html          # SPA entry point
 │   ├── main.ts             # Application logic
