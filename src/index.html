@@ -108,12 +108,13 @@
           </section>
 
           <section class="filter-row" aria-label="Server filters">
-            <button class="filter-chip is-active" type="button" data-filter="all" aria-pressed="true">All</button>
+            <span class="filter-label">FILTERS:</span>
             <button class="filter-chip" type="button" data-filter="owned" aria-pressed="false">Owner</button>
             <button class="filter-chip" type="button" data-filter="partner" aria-pressed="false">Partner</button>
             <button class="filter-chip" type="button" data-filter="verified" aria-pressed="false">Verified</button>
             <button class="filter-chip" type="button" data-filter="boosted" aria-pressed="false">Boosted</button>
             <button class="filter-chip" type="button" data-filter="discoverable" aria-pressed="false">Discoverable</button>
+            <button class="filter-clear hidden" type="button" id="filter-clear">Clear</button>
           </section>
 
           <section class="section hidden" id="favorites-section">

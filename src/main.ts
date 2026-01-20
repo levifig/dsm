@@ -29,8 +29,7 @@ import { createElement, getIconUrl } from './lib/utils';
 
 type FilterKey = 'all' | 'owned' | 'partner' | 'verified' | 'boosted' | 'discoverable';
 
-const filterTooltipCopy: Record<FilterKey, string> = {
-  all: 'All servers',
+const filterTooltipCopy: Partial<Record<FilterKey, string>> = {
   owned: 'Servers you administer',
   partner: 'Discord Partner Program',
   verified: 'Officially verified server',
@@ -42,7 +41,7 @@ interface AppState {
   me: string | null;
   guilds: ApiGuild[];
   userData: UserDataStore;
-  filter: FilterKey;
+  activeFilters: Set<FilterKey>;
   search: string;
 }
 
@@ -84,7 +83,7 @@ const state: AppState = {
   me: null,
   guilds: [],
   userData: loadUserData(storageOptions),
-  filter: 'all',
+  activeFilters: new Set<FilterKey>(),
   search: '',
 };
 
@@ -209,7 +208,7 @@ const buildServerViews = (): ServerView[] => {
   }));
 };
 
-const matchesFilter = (server: ServerView, filter: FilterKey): boolean => {
+const matchesSingleFilter = (server: ServerView, filter: FilterKey): boolean => {
   switch (filter) {
     case 'owned':
       return server.owner;
@@ -224,6 +223,18 @@ const matchesFilter = (server: ServerView, filter: FilterKey): boolean => {
     default:
       return true;
   }
+};
+
+const matchesFilter = (server: ServerView, activeFilters: Set<FilterKey>): boolean => {
+  if (activeFilters.size === 0) {
+    return true;
+  }
+  for (const filter of activeFilters) {
+    if (!matchesSingleFilter(server, filter)) {
+      return false;
+    }
+  }
+  return true;
 };
 
 const matchesSearch = (server: ServerView, query: string): boolean => {
@@ -289,7 +300,7 @@ const renderSection = (key: string, servers: ServerView[]): void => {
 const render = (): void => {
   const servers = buildServerViews();
   const filtered = servers.filter((server) =>
-    matchesFilter(server, state.filter) && matchesSearch(server, state.search.trim()),
+    matchesFilter(server, state.activeFilters) && matchesSearch(server, state.search.trim()),
   );
 
   const favorites = filtered.filter((server) => server.isFavorite).sort(sortByName);
@@ -319,13 +330,42 @@ const render = (): void => {
   searchHelper.classList.toggle('hidden', state.search.trim().length > 0);
 };
 
-const setFilter = (filter: FilterKey): void => {
-  state.filter = filter;
+const updateFilterClearVisibility = (): void => {
+  const clearButton = document.getElementById('filter-clear');
+  if (clearButton) {
+    const hasActiveFilters = state.activeFilters.size > 0;
+    clearButton.classList.toggle('hidden', !hasActiveFilters);
+  }
+};
+
+const updateFilterUI = (): void => {
   document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((button) => {
-    const isActive = button.dataset.filter === filter;
+    const filter = button.dataset.filter as FilterKey | undefined;
+    if (!filter || filter === 'all') {
+      return;
+    }
+    const isActive = state.activeFilters.has(filter);
     button.classList.toggle('is-active', isActive);
     button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
+  updateFilterClearVisibility();
+};
+
+const toggleFilter = (filter: FilterKey): void => {
+  if (filter === 'all') {
+    state.activeFilters.clear();
+  } else if (state.activeFilters.has(filter)) {
+    state.activeFilters.delete(filter);
+  } else {
+    state.activeFilters.add(filter);
+  }
+  updateFilterUI();
+  render();
+};
+
+const clearFilters = (): void => {
+  state.activeFilters.clear();
+  updateFilterUI();
   render();
 };
 
@@ -721,10 +761,15 @@ const setupEvents = (): void => {
     button.addEventListener('click', () => {
       const filter = button.dataset.filter as FilterKey | undefined;
       if (filter) {
-        setFilter(filter);
+        toggleFilter(filter);
       }
     });
   });
+
+  const filterClearButton = document.getElementById('filter-clear');
+  if (filterClearButton) {
+    filterClearButton.addEventListener('click', clearFilters);
+  }
 
   searchInput.addEventListener('input', (event) => {
     const target = event.target as HTMLInputElement;
