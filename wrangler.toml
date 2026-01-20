@@ -18,4 +18,4 @@ kv_namespaces = [
 ]
 
 [env.production.vars]
-DISCORD_REDIRECT_URI = "https://your-domain.com/api/auth/callback"
+DISCORD_REDIRECT_URI = "https://metacord.app/api/auth/callback"

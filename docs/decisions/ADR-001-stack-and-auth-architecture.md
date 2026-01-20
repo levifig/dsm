@@ -6,7 +6,7 @@ Accepted (2026-01-19)
 
 ## Context
 
-Discord Server Manager (DSM) needs a full-stack architecture to support:
+Metacord - Your Personal Discord Server Directory needs a full-stack architecture to support:
 - Discord OAuth authentication
 - Server list fetching and caching
 - Local-first user data storage

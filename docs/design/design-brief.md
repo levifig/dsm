@@ -1,8 +1,8 @@
-# DSM (Discord Server Manager) - Design Brief
+# Metacord - Your Personal Discord Server Directory - Design Brief
 
 ## Overview
 
-DSM is a personal Discord server directory that allows users to view, organize, and manage their Discord server memberships through a clean web interface.
+Metacord - Your Personal Discord Server Directory is a Discord server directory that allows users to view, organize, and manage their Discord server memberships through a clean web interface.
 
 ## Goals
 
@@ -15,7 +15,7 @@ DSM is a personal Discord server directory that allows users to view, organize, 
 ## Information Architecture
 
 ```
-DSM App
+Metacord App
 ├── Login (Standalone screen)
 └── App Shell (authenticated)
     ├── Header
@@ -46,7 +46,7 @@ DSM App
 ### Login - Desktop
 
 - Centered panel on subtle background
-- Brand mark + "Discord Server Manager"
+- Brand mark + "Metacord"
 - Title: "Welcome back"
 - Body: "No data stored on servers. Everything stays in your device."
 - Primary CTA: "Log in with Discord" (full-width)

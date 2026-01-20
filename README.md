@@ -1,6 +1,6 @@
-# DSM (Discord Server Manager)
+# Metacord - Your Personal Discord Server Directory
 
-Personal Discord server directory with OAuth authentication.
+Metacord - Your Personal Discord Server Directory is a Discord server directory with OAuth authentication.
 
 ## Features
 
@@ -71,13 +71,7 @@ Personal Discord server directory with OAuth authentication.
 
 ### Deployment
 
-1. Connect GitHub repo to Cloudflare Pages
-2. Set environment variables in Cloudflare dashboard:
-   - `DISCORD_CLIENT_ID`
-   - `DISCORD_CLIENT_SECRET`
-   - `SESSION_SECRET`
-3. Update `DISCORD_REDIRECT_URI` in `wrangler.toml` for production
-4. Add production redirect URL to Discord application
+See `docs/deployment.md`.
 
 ## Project Structure
 

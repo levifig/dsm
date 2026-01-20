@@ -12,3 +12,4 @@ tmp/
 guilds_api.json
 servers_data.json
 .serena/
+.agents/

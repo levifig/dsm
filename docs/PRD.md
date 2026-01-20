@@ -1,8 +1,8 @@
-# DSM (Discord Server Manager) — Product Requirements Document
+# Metacord - Your Personal Discord Server Directory — Product Requirements Document
 
 ## Overview
 
-A personal Discord server directory that allows users to view, organize, and manage their Discord server memberships through a clean web interface. Users authenticate via Discord OAuth, eliminating manual token handling and enabling seamless access to their server data.
+Metacord - Your Personal Discord Server Directory is a Discord server directory that allows users to view, organize, and manage their Discord server memberships through a clean web interface. Users authenticate via Discord OAuth, eliminating manual token handling and enabling seamless access to their server data.
 
 ## Problem Statement
 
