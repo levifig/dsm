@@ -1,21 +1,12 @@
 # Cloudflare Pages configuration
-name = "discord-manager"
+name = "metacord"
 compatibility_date = "2024-01-15"
 pages_build_output_dir = "dist"
 
-# Environment variables (set via dashboard or wrangler secret)
-# DISCORD_CLIENT_ID - Your Discord application client ID
-# DISCORD_CLIENT_SECRET - Your Discord application client secret
-# SESSION_SECRET - Random string for signing session cookies
-
-[vars]
-DISCORD_REDIRECT_URI = "http://localhost:8788/api/auth/callback"
-
-# Production overrides
-[env.production]
-kv_namespaces = [
-  { binding = "SESSIONS", id = "", preview_id = "" }
-]
-
-[env.production.vars]
-DISCORD_REDIRECT_URI = "https://metacord.app/api/auth/callback"
+# Environment variables
+# For local development, DISCORD_REDIRECT_URI defaults to http://localhost:8788/api/auth/callback
+# For production/dev, set these in Cloudflare Pages dashboard or via wrangler secret:
+#   - DISCORD_CLIENT_ID
+#   - DISCORD_CLIENT_SECRET
+#   - SESSION_SECRET (generate with: openssl rand -hex 32)
+#   - DISCORD_REDIRECT_URI (https://metacord.app/api/auth/callback or https://dev.metacord.app/api/auth/callback)

@@ -1,8 +1,8 @@
 {
-  "name": "discord-manager",
+  "name": "metacord",
   "version": "0.1.0",
   "private": true,
-  "description": "Personal Discord server directory with OAuth authentication",
+  "description": "Metacord - Your Personal Discord Server Directory",
   "scripts": {
     "dev": "concurrently -k \"pnpm run dev:ui\" \"pnpm run dev:api\"",
     "dev:ui": "vite",
