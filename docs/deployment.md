@@ -20,6 +20,11 @@ pnpm run deploy
 pnpm run deploy:dev
 ```
 
+## Local dev secrets
+
+Wrangler reads local Worker secrets from `.dev.vars.development` when using `wrangler dev --env development`.
+Copy `.dev.vars.development.example` to `.dev.vars.development` for local development instead of using `.envrc`.
+
 ## Cloudflare Workers
 
 Metacord runs as Cloudflare Workers with static assets served from the bundled `dist` directory.

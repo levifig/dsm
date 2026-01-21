@@ -5,6 +5,8 @@ dist/
 .env
 .env.*
 .envrc
+.dev.vars
+.dev.vars.*
 .pnpm-store/
 .DS_Store
 *.log
