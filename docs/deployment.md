@@ -20,23 +20,39 @@ pnpm run deploy
 pnpm run deploy:dev
 ```
 
-## Cloudflare Pages
+## Cloudflare Workers
 
-### Production project
-- **Project name**: `metacord-prod`
-- **Production branch**: `main`
+Metacord runs as Cloudflare Workers with static assets served from the bundled `dist` directory.
+
+### Production worker
+- **Worker name**: `metacord-prod`
+- **Branch**: `main`
 - **Custom domain**: `metacord.app`
 - **Deploy command**: `pnpm run deploy`
+- **KV namespace binding**: `SESSIONS`
 - **Env vars**: `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `SESSION_SECRET`, `DISCORD_REDIRECT_URI`
-- **KV namespace**: `SESSIONS`
 
-### Development project
-- **Project name**: `metacord-dev`
-- **Production branch**: `dev`
+### Development worker
+- **Worker name**: `metacord-dev`
+- **Branch**: `dev`
 - **Custom domain**: `dev.metacord.app`
 - **Deploy command**: `pnpm run deploy:dev`
+- **KV namespace binding**: `SESSIONS`
 - **Env vars**: `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `SESSION_SECRET`, `DISCORD_REDIRECT_URI`
-- **KV namespace**: `SESSIONS`
+
+### Dashboard setup
+- Create two KV namespaces (dev + prod) and fill in the `id` values in `wrangler.toml` for each environment.
+- Add Worker routes or custom domains:
+  - `metacord.app/*` -> `metacord-prod`
+  - `dev.metacord.app/*` -> `metacord-dev`
+- Keep `DISCORD_REDIRECT_URI` set per environment in `wrangler.toml`.
+- Set secrets per environment (recommended via CLI):
+  - `wrangler secret put DISCORD_CLIENT_ID --env production`
+  - `wrangler secret put DISCORD_CLIENT_SECRET --env production`
+  - `wrangler secret put SESSION_SECRET --env production`
+  - `wrangler secret put DISCORD_CLIENT_ID --env development`
+  - `wrangler secret put DISCORD_CLIENT_SECRET --env development`
+  - `wrangler secret put SESSION_SECRET --env development`
 
 ## Branch protection
 

@@ -380,6 +380,7 @@ app.get('/api/widget/:id', async (c) => {
 });
 
 export const onRequest = app.fetch;
+export { app };
 
 function buildOAuthCookie(name: string, value: string): string {
   return serializeCookie(name, value, {

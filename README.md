@@ -14,8 +14,8 @@ Metacord is a personal Discord server directory, allowing to keep track of curre
 
 ## Architecture
 
-- **Frontend**: Static SPA (Vite + TypeScript) on Cloudflare Pages
-- **Backend**: Hono catch-all router in Pages Functions (`/api/*`)
+- **Frontend**: Static SPA (Vite + TypeScript) served by Cloudflare Workers assets
+- **Backend**: Hono catch-all router in a Workers entry (`/api/*`)
 - **Auth**: Discord OAuth with PKCE, AES-GCM encrypted tokens in Workers KV
 - **Storage**: KV for sessions, localStorage for user preferences
 
@@ -85,6 +85,7 @@ metacord/
 ├── src/
 │   ├── index.html          # SPA entry point
 │   ├── main.ts             # Application logic
+│   ├── worker.ts           # Cloudflare Worker entry (assets + API)
 │   ├── style.css           # Styles with CSS variables
 │   ├── components/         # UI components (modal, serverCard, toast)
 │   └── lib/                # Frontend helpers (api, storage, utils)

@@ -1,11 +1,16 @@
-# Cloudflare Pages configuration
-name = "metacord"
-compatibility_date = "2024-01-15"
-pages_build_output_dir = "dist"
+# Cloudflare Workers configuration
+name = "metacord-dev"
+main = "src/worker.ts"
+compatibility_date = "2026-01-21"
+
+[assets]
+directory = "dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
 
 # Environment variables
 # For local development, DISCORD_REDIRECT_URI defaults to http://localhost:8788/api/auth/callback
-# For production/dev, set these in Cloudflare Pages dashboard or via wrangler secret:
+# For production/dev, set these in Cloudflare Workers dashboard or via wrangler secret:
 #   - DISCORD_CLIENT_ID
 #   - DISCORD_CLIENT_SECRET
 #   - SESSION_SECRET (generate with: openssl rand -hex 32)
@@ -13,7 +18,7 @@ pages_build_output_dir = "dist"
 
 [env.production]
 # Production environment (main branch)
-# Project name: metacord-prod
+# Worker name: metacord-prod
 # Custom domain: metacord.app
 # Deploy with: pnpm run deploy
 name = "metacord-prod"
@@ -26,7 +31,7 @@ DISCORD_REDIRECT_URI = "https://metacord.app/api/auth/callback"
 
 [env.development]
 # Development environment (dev branch)
-# Project name: metacord-dev
+# Worker name: metacord-dev
 # Custom domain: dev.metacord.app
 # Deploy with: pnpm run deploy:dev
 name = "metacord-dev"
