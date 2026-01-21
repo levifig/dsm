@@ -14,6 +14,7 @@ import {
   deleteSession,
   getSessionCookieName,
   getSessionContext,
+  isSecureContext,
   persistSession,
   refreshSession,
 } from '../lib/session';
@@ -43,6 +44,7 @@ app.get('/api/auth/login', async (c) => {
   const state = crypto.randomUUID();
   const verifier = createPkceVerifier();
   const challenge = await createPkceChallenge(verifier);
+  const secure = isSecureContext(c.req.raw);
 
   const params = new URLSearchParams({
     client_id: c.env.DISCORD_CLIENT_ID,
@@ -56,8 +58,8 @@ app.get('/api/auth/login', async (c) => {
 
   const headers = new Headers();
   headers.set('Location', `${DISCORD_OAUTH_URL}?${params.toString()}`);
-  headers.append('Set-Cookie', buildOAuthCookie(OAUTH_STATE_COOKIE, state));
-  headers.append('Set-Cookie', buildOAuthCookie(OAUTH_VERIFIER_COOKIE, verifier));
+  headers.append('Set-Cookie', buildOAuthCookie(OAUTH_STATE_COOKIE, state, secure));
+  headers.append('Set-Cookie', buildOAuthCookie(OAUTH_VERIFIER_COOKIE, verifier, secure));
 
   return new Response(null, { status: 302, headers });
 });
@@ -120,6 +122,7 @@ app.get('/api/auth/callback', async (c) => {
   const user: DiscordUser = await userResponse.json();
   const sessionId = crypto.randomUUID();
   const now = Date.now();
+  const secure = isSecureContext(c.req.raw);
 
   await persistSession(
     sessionId,
@@ -135,9 +138,9 @@ app.get('/api/auth/callback', async (c) => {
 
   const headers = new Headers();
   headers.set('Location', '/');
-  headers.append('Set-Cookie', buildSessionCookie(sessionId));
-  headers.append('Set-Cookie', clearOAuthCookie(OAUTH_STATE_COOKIE));
-  headers.append('Set-Cookie', clearOAuthCookie(OAUTH_VERIFIER_COOKIE));
+  headers.append('Set-Cookie', buildSessionCookie(sessionId, secure));
+  headers.append('Set-Cookie', clearOAuthCookie(OAUTH_STATE_COOKIE, secure));
+  headers.append('Set-Cookie', clearOAuthCookie(OAUTH_VERIFIER_COOKIE, secure));
 
   return new Response(null, { status: 302, headers });
 });
@@ -145,14 +148,15 @@ app.get('/api/auth/callback', async (c) => {
 type AppContext = Context<{ Bindings: Env }>;
 
 const logoutHandler = async (c: AppContext) => {
+  const secure = isSecureContext(c.req.raw);
   const cookies = parseCookies(c.req.header('Cookie'));
-  const sessionId = cookies[getSessionCookieName()];
+  const sessionId = cookies[getSessionCookieName(secure)];
   if (sessionId) {
     await deleteSession(sessionId, c.env);
   }
 
   const headers = new Headers();
-  headers.append('Set-Cookie', buildClearSessionCookie());
+  headers.append('Set-Cookie', buildClearSessionCookie(secure));
 
   if (c.req.method === 'GET') {
     headers.set('Location', '/');
@@ -181,12 +185,12 @@ app.get('/api/me', async (c) => {
   );
 
   if (!result.session) {
-    headers.append('Set-Cookie', buildClearSessionCookie());
+    headers.append('Set-Cookie', buildClearSessionCookie(sessionContext.secure));
     return jsonResponse({ authenticated: false, reason: 'invalid_token' }, 200, headers);
   }
 
   if (result.response.status === 401) {
-    headers.append('Set-Cookie', buildClearSessionCookie());
+    headers.append('Set-Cookie', buildClearSessionCookie(sessionContext.secure));
     return jsonResponse({ authenticated: false, reason: 'invalid_token' }, 200, headers);
   }
 
@@ -234,13 +238,13 @@ app.get('/api/guilds', async (c) => {
 
   if (!result.session) {
     const headers = new Headers();
-    headers.append('Set-Cookie', buildClearSessionCookie());
+    headers.append('Set-Cookie', buildClearSessionCookie(sessionContext.secure));
     return errorResponse('Unauthorized', 401, headers);
   }
 
   if (result.response.status === 401) {
     const headers = new Headers();
-    headers.append('Set-Cookie', buildClearSessionCookie());
+    headers.append('Set-Cookie', buildClearSessionCookie(sessionContext.secure));
     return errorResponse('Unauthorized', 401, headers);
   }
 
@@ -299,13 +303,13 @@ app.get('/api/guilds/:id', async (c) => {
 
   if (!result.session) {
     const headers = new Headers();
-    headers.append('Set-Cookie', buildClearSessionCookie());
+    headers.append('Set-Cookie', buildClearSessionCookie(sessionContext.secure));
     return errorResponse('Unauthorized', 401, headers);
   }
 
   if (result.response.status === 401) {
     const headers = new Headers();
-    headers.append('Set-Cookie', buildClearSessionCookie());
+    headers.append('Set-Cookie', buildClearSessionCookie(sessionContext.secure));
     return errorResponse('Unauthorized', 401, headers);
   }
 
@@ -382,21 +386,21 @@ app.get('/api/widget/:id', async (c) => {
 export const onRequest = app.fetch;
 export { app };
 
-function buildOAuthCookie(name: string, value: string): string {
+function buildOAuthCookie(name: string, value: string, secure: boolean = true): string {
   return serializeCookie(name, value, {
     path: '/',
     httpOnly: true,
-    secure: true,
+    secure: secure,
     sameSite: 'Lax',
     maxAge: OAUTH_COOKIE_MAX_AGE,
   });
 }
 
-function clearOAuthCookie(name: string): string {
+function clearOAuthCookie(name: string, secure: boolean = true): string {
   return serializeCookie(name, '', {
     path: '/',
     httpOnly: true,
-    secure: true,
+    secure: secure,
     sameSite: 'Lax',
     maxAge: 0,
   });
