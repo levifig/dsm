@@ -1,0 +1,23 @@
+{
+  "initialized": "2026-08-10T14:12:54Z",
+  "integrations": {
+    "github": {
+      "account": "levifig"
+    },
+    "linear": {
+      "enabled": false
+    },
+    "serena": {
+      "enabled": false
+    }
+  },
+  "knowledge": {
+    "imports": [],
+    "local": [
+      "docs/knowledge",
+      "docs/decisions"
+    ],
+    "staleness_threshold_days": 30
+  },
+  "version": "1.0.0"
+}

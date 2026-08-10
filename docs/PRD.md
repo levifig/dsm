@@ -1,5 +1,8 @@
 # Metacord - Your Personal Discord Server Directory — Product Requirements Document
 
+> [!NOTE]
+> This is a historical requirements snapshot from the prototype and initial build. It preserves original scope, targets, and sequencing for provenance, but it is not current strategic authority. See [VISION.md](VISION.md), [STRATEGY.md](STRATEGY.md), and [ARCHITECTURE.md](ARCHITECTURE.md) for the active operating model. Numeric targets below are aspirations until supported by measurements.
+
 ## Overview
 
 Metacord - Your Personal Discord Server Directory is a Discord server directory that allows users to view, organize, and manage their Discord server memberships through a clean web interface. Users authenticate via Discord OAuth, eliminating manual token handling and enabling seamless access to their server data.

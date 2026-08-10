@@ -4,11 +4,11 @@ Deployment checklist for Metacord - Your Personal Discord Server Directory.
 
 ## Branch strategy
 
-- `main` is production
-- `dev` is dev environment
-- `feature/*`, `fix/*`, `chore/*` branches merge into `dev`
-- Periodic PR from `dev` to `main`
-- Tag semantic versions on `main` (example: `v1.4.2`)
+- `main` is the sole target integration line and the production source.
+- Work happens on short-lived branches attached to one bounded Loaf Change and lands through reviewed pull requests to `main`.
+- The existing `dev` branch contains unreconciled commits from the former promotion model. It is transitional evidence, not the integration line; do not delete it until a dedicated Change verifies and preserves its work.
+- The development Worker is an environment target, not a long-lived Git branch. Deploy it explicitly from the Change being tested.
+- Tag semantic versions only from verified `main` commits (example: `v1.4.2`).
 
 ## Deployment commands
 
@@ -67,7 +67,7 @@ Metacord runs as Cloudflare Workers with static assets served from the bundled `
 - Require linear history
 - Block force pushes and deletions
 
-`dev`:
-- Require PRs
-- Require status checks
-- Allow squash merges
+Short-lived Change branches:
+- Require the same local evidence sequence as CI before review.
+- Merge only through a reviewed PR to `main`.
+- Delete after landing unless retained temporarily for incident or provenance needs.

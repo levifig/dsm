@@ -21,11 +21,23 @@ Metacord is a personal Discord server directory, allowing to keep track of curre
 - **Auth**: Discord OAuth with PKCE, AES-GCM encrypted tokens in Workers KV
 - **Storage**: KV for sessions, localStorage for user preferences
 
+## Project Operating Model
+
+Metacord uses `main` as its target integration line and short-lived branches attached to one bounded Loaf Change. The existing `dev` branch is transitional and must be reconciled before it is retired.
+
+- [Vision](docs/VISION.md) — product purpose, users, success, and non-goals
+- [Strategy](docs/STRATEGY.md) — current focus, constraints, and open questions
+- [Architecture](docs/ARCHITECTURE.md) — technology-neutral system boundaries and principles
+- [Decisions](docs/decisions/) — concrete implementation decisions
+- [Deployment](docs/deployment.md) — environment and deployment guidance
+
+`docs/PRD.md` is retained as a historical requirements snapshot; the operating documents above are current authority.
+
 ## Development
 
 ### Prerequisites
 
-- Node.js 18+ with pnpm
+- Node.js 22 with pnpm
 - Cloudflare account
 - Discord application ([discord.com/developers](https://discord.com/developers/applications))
 
@@ -69,12 +81,29 @@ Local development runs Vite on `http://localhost:5173` and Wrangler on `http://l
 
 > **Tip**: Use `?demo=1` to preview the UI without setting up OAuth. Demo mode loads mock data from a `guilds_api.json` that you can extract from the Console of your browser in a logged in session.
 
+### Verification
+
+Run the complete local evidence sequence before proposing a Change for landing:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm types
+pnpm exec tsc --noEmit
+pnpm exec tsc --noEmit -p tsconfig.backend.json
+pnpm build
+pnpm test
+```
+
+Local checks do not prove a deployment. Record development and production smoke results separately without committing credentials or personal Discord data.
+
 ### Scripts
 
 | Command | Description |
 |---------|-------------|
 | `pnpm dev` | Run Vite + Wrangler concurrently |
+| `pnpm types` | Generate Cloudflare Worker binding types |
 | `pnpm build` | Build frontend for production |
+| `pnpm test` | Run the complete Vitest suite |
 | `pnpm preview` | Preview production build locally |
 
 ### Deployment
@@ -98,7 +127,11 @@ metacord/
 │   └── lib/                # Backend helpers (session, cache, crypto, cookies, http, types)
 ├── shared/                 # Shared types (placeholder)
 ├── docs/
-│   └── PRD.md              # Product requirements
+│   ├── VISION.md           # Product purpose and boundaries
+│   ├── STRATEGY.md         # Current focus and open questions
+│   ├── ARCHITECTURE.md     # Durable logical system model
+│   ├── decisions/          # Concrete implementation decisions
+│   └── PRD.md              # Historical requirements snapshot
 ├── vite.config.ts          # Vite build config
 ├── wrangler.toml           # Cloudflare config
 ├── tsconfig.json           # TypeScript config

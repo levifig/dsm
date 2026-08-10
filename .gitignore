@@ -7,6 +7,7 @@ dist/
 .envrc
 .dev.vars
 .dev.vars.*
+!.dev.vars.development.example
 .pnpm-store/
 .DS_Store
 *.log
@@ -15,5 +16,12 @@ tmp/
 guilds_api.json
 servers_data.json
 .serena/
-.agents/
+# Loaf project config is shared; operational state is SQLite-backed.
+.agents/sessions/
+.agents/plans/
+.agents/transcripts/
+.agents/tmp/
+.agents/backups/
+.agents/.loaf-state
+.agents/.moved-to
 worker-configuration.d.ts

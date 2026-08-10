@@ -1,0 +1,6 @@
+# Copy to .dev.vars.development and fill in values for `wrangler dev --env development`
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+DISCORD_REDIRECT_URI=http://localhost:8787/api/auth/callback
+DEV_ASSETS_URL=http://localhost:5173
+SESSION_SECRET=
